@@ -33,11 +33,11 @@ except ImportError:
         "Warning: scipy not available. Install with 'uv add scipy' for optimization features."
     )
 
-from .per_diem import PerDiemCalculator
-from .mileage import MileageCalculator
+from .per_diem.per_diem import PerDiemCalculator
+from .mileage.mileage import MileageCalculator
 from .receipts import ReceiptProcessor
-from .bonuses import BonusCalculator
-from .bugs import BugProcessor
+from .bonuses.bonuses import BonusCalculator
+from .bugs.bugs import BugProcessor
 
 
 class SystemOptimizer:

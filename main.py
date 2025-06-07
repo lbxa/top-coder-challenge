@@ -1,9 +1,9 @@
 import sys
-from components.per_diem import PerDiemCalculator
-from components.mileage import MileageCalculator
+from components.per_diem.per_diem import PerDiemCalculator
+from components.mileage.mileage import MileageCalculator
 from components.receipts import ReceiptProcessor
-from components.bonuses import BonusCalculator
-from components.bugs import BugProcessor
+from components.bonuses.bonuses import BonusCalculator
+from components.bugs.bugs import BugProcessor
 
 
 def calculate_reimbursement(days: float, miles: float, receipts: float) -> float:
