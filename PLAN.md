@@ -29,6 +29,27 @@ This plan outlines a systematic approach to reverse-engineer ACME Corp's 60-year
    - Possible seasonal/timing variations
    - Complex interaction effects between factors
 
+### System Architecture Overview
+
+```mermaid
+graph TD
+    A["Input Data<br/>(trip_duration_days,<br/>miles_traveled,<br/>total_receipts_amount)"] --> B["Base Per Diem<br/>Calculation"]
+    A --> C["Mileage<br/>Reimbursement"]
+    A --> D["Receipt<br/>Processing"]
+    A --> E["Special<br/>Bonuses/Penalties"]
+    
+    B --> F["Combined<br/>Calculation"]
+    C --> F
+    D --> F
+    E --> F
+    
+    F --> G["Final<br/>Adjustments<br/>(Rounding, Bugs)"]
+    G --> H["Reimbursement<br/>Amount"]
+    
+    style A fill:#e8f4f8
+    style H fill:#d4edda
+```
+
 ## Approach
 
 ### Phase 1: Data Analysis and Pattern Recognition
