@@ -1,110 +1,81 @@
 #!/usr/bin/env python3
-"""
-Analyze calculation errors to identify patterns
-"""
+"""Analyze high-error cases to find patterns."""
 
 import json
-from calculator_v2 import calculate_reimbursement
+from reimbursement_calculator_optimized import calculate_reimbursement
 
-# Load cases
-with open('public_cases.json', 'r') as f:
-    cases = json.load(f)
-
-# Calculate errors
-errors = []
-for i, case in enumerate(cases):
-    inp = case['input']
-    expected = case['expected_output']
-    calculated = calculate_reimbursement(
-        inp['trip_duration_days'],
-        inp['miles_traveled'],
-        inp['total_receipts_amount']
-    )
-    error = abs(calculated - expected)
+def analyze_high_errors():
+    with open('public_cases.json', 'r') as f:
+        cases = json.load(f)
     
-    errors.append({
-        'case_id': i,
-        'input': inp,
-        'expected': expected,
-        'calculated': calculated,
-        'error': error,
-        'error_pct': error / expected * 100 if expected > 0 else 0
-    })
-
-# Sort by error
-errors.sort(key=lambda x: x['error'], reverse=True)
-
-print("=== TOP 20 ERRORS ===")
-for i, e in enumerate(errors[:20]):
-    inp = e['input']
-    print(f"\n{i+1}. Case {e['case_id']}: Error ${e['error']:.2f} ({e['error_pct']:.1f}%)")
-    print(f"   Input: {inp['trip_duration_days']}d, {inp['miles_traveled']:.1f}mi, ${inp['total_receipts_amount']:.2f}")
-    print(f"   Expected: ${e['expected']:.2f}, Calculated: ${e['calculated']:.2f}")
+    # High error cases from eval.sh output
+    high_error_cases = [
+        (936, 10, 174, 1991.96, 1542.40),  # Expected $1542.40, Got $2310.16
+        (895, 12, 18, 2461.37, 1556.78),   # Expected $1556.78, Got $2281.31
+        (876, 13, 8, 78.44, 713.71),       # Expected $713.71, Got $1434.20
+        (346, 12, 81, 2485.34, 1589.65),   # Expected $1589.65, Got $2305.05
+        (318, 13, 1034, 2477.98, 1842.24), # Expected $1842.24, Got $2554.22
+    ]
     
-    # Check patterns
-    cents = round((inp['total_receipts_amount'] * 100) % 100)
-    if cents in [49, 99]:
-        print(f"   → Has cents bug (.{cents:02d})")
+    print("=== HIGH ERROR CASE ANALYSIS ===\n")
     
-    # Analyze what went wrong
-    if e['calculated'] > e['expected']:
-        print("   → OVERESTIMATED")
-    else:
-        print("   → UNDERESTIMATED")
-
-# Analyze by trip duration
-print("\n\n=== ERROR ANALYSIS BY TRIP DURATION ===")
-for days in range(1, 15):
-    day_errors = [e for e in errors if e['input']['trip_duration_days'] == days]
-    if day_errors:
-        avg_error = sum(e['error'] for e in day_errors) / len(day_errors)
-        avg_pct = sum(e['error_pct'] for e in day_errors) / len(day_errors)
-        overest = sum(1 for e in day_errors if e['calculated'] > e['expected'])
+    for case_id, days, miles, receipts, expected in high_error_cases:
+        predicted = calculate_reimbursement(days, miles, receipts)
+        error = abs(predicted - expected)
         
-        print(f"\n{days} days: {len(day_errors)} cases")
-        print(f"  Avg error: ${avg_error:.2f} ({avg_pct:.1f}%)")
-        print(f"  Overestimated: {overest}/{len(day_errors)} cases")
+        # Calculate metrics
+        mpd = miles / days if days > 0 else 0
+        rpd = receipts / days if days > 0 else 0
+        receipt_ratio = expected / receipts if receipts > 0 else 0
         
-        # Show worst case
-        worst = max(day_errors, key=lambda x: x['error'])
-        print(f"  Worst: Case {worst['case_id']}, error ${worst['error']:.2f}")
+        print(f"Case {case_id}: {days}d, {miles}mi, ${receipts:.2f}")
+        print(f"  Expected: ${expected:.2f}, Got: ${predicted:.2f}, Error: ${error:.2f}")
+        print(f"  MPD: {mpd:.1f}, RPD: ${rpd:.1f}")
+        print(f"  Receipt ratio: {receipt_ratio:.3f}")
+        print(f"  Cents: {int(receipts * 100) % 100}")
+        print()
+    
+    # Analyze patterns in all cases with similar characteristics
+    print("\n=== PATTERN ANALYSIS ===\n")
+    
+    # Pattern 1: Long trips (10-14 days) with high receipts
+    long_high_receipt = []
+    for i, case in enumerate(cases):
+        d = case['input']['trip_duration_days']
+        r = case['input']['total_receipts_amount']
+        if 10 <= d <= 14 and r > 1500:
+            predicted = calculate_reimbursement(d, case['input']['miles_traveled'], r)
+            actual = case['expected_output']
+            error = abs(predicted - actual)
+            ratio = actual / r if r > 0 else 0
+            long_high_receipt.append((d, r, ratio, error))
+    
+    if long_high_receipt:
+        avg_ratio = sum(x[2] for x in long_high_receipt) / len(long_high_receipt)
+        avg_error = sum(x[3] for x in long_high_receipt) / len(long_high_receipt)
+        print(f"Long trips (10-14d) with high receipts (>$1500):")
+        print(f"  Count: {len(long_high_receipt)}")
+        print(f"  Avg receipt ratio: {avg_ratio:.3f}")
+        print(f"  Avg error: ${avg_error:.2f}")
+    
+    # Pattern 2: Long trips with very low mileage
+    long_low_miles = []
+    for i, case in enumerate(cases):
+        d = case['input']['trip_duration_days']
+        m = case['input']['miles_traveled']
+        if d >= 10 and m < 100:
+            predicted = calculate_reimbursement(d, m, case['input']['total_receipts_amount'])
+            actual = case['expected_output']
+            error = abs(predicted - actual)
+            long_low_miles.append((d, m, actual, predicted, error))
+    
+    if long_low_miles:
+        avg_error = sum(x[4] for x in long_low_miles) / len(long_low_miles)
+        print(f"\nLong trips (>=10d) with low mileage (<100mi):")
+        print(f"  Count: {len(long_low_miles)}")
+        print(f"  Avg error: ${avg_error:.2f}")
+        for d, m, actual, pred, err in sorted(long_low_miles, key=lambda x: x[4], reverse=True)[:5]:
+            print(f"    {d}d, {m}mi: Expected ${actual:.2f}, Got ${pred:.2f}, Error ${err:.2f}")
 
-# Analyze by receipt range
-print("\n\n=== ERROR ANALYSIS BY RECEIPT RANGE ===")
-ranges = [(0, 50), (50, 100), (100, 200), (200, 500), (500, 1000), (1000, 2000), (2000, 5000)]
-for low, high in ranges:
-    range_errors = [e for e in errors if low <= e['input']['total_receipts_amount'] < high]
-    if range_errors:
-        avg_error = sum(e['error'] for e in range_errors) / len(range_errors)
-        avg_pct = sum(e['error_pct'] for e in range_errors) / len(range_errors)
-        
-        print(f"\n${low}-${high}: {len(range_errors)} cases")
-        print(f"  Avg error: ${avg_error:.2f} ({avg_pct:.1f}%)")
-
-# Specific pattern: 1-day trips with medium receipts
-print("\n\n=== 1-DAY TRIP ANALYSIS ===")
-one_day_trips = [c for c in cases if c['input']['trip_duration_days'] == 1]
-print(f"Total 1-day trips: {len(one_day_trips)}")
-
-# Group by receipt range
-for low, high in [(0, 100), (100, 500), (500, 1000), (1000, 2000), (2000, 5000)]:
-    range_trips = [t for t in one_day_trips if low <= t['input']['total_receipts_amount'] < high]
-    if range_trips:
-        avg_expected = sum(t['expected_output'] for t in range_trips) / len(range_trips)
-        
-        # Calculate what we're producing
-        avg_calculated = 0
-        for t in range_trips:
-            calc = calculate_reimbursement(1, t['input']['miles_traveled'], t['input']['total_receipts_amount'])
-            avg_calculated += calc
-        avg_calculated /= len(range_trips)
-        
-        print(f"\n  Receipts ${low}-${high}: {len(range_trips)} cases")
-        print(f"    Avg expected: ${avg_expected:.2f}")
-        print(f"    Avg calculated: ${avg_calculated:.2f}")
-        print(f"    Difference: ${avg_calculated - avg_expected:.2f}")
-
-print("\n\n=== KEY INSIGHTS ===")
-print("1. Major overestimation on 1-day trips with $100-500 receipts")
-print("2. Need to reduce base per diem for 1-day trips")
-print("3. Receipt multipliers may be too high for certain ranges")
+if __name__ == "__main__":
+    analyze_high_errors()
