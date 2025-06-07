@@ -138,7 +138,7 @@ def test_parameter_management():
     new_params = {
         "short_trip_threshold": 80.0,
         "medium_trip_threshold": 125.0,
-        "small_receipt_penalty": 40.0
+        "small_receipt_penalty_factor": 0.90
     }
     processor.set_parameters(new_params)
     

@@ -88,10 +88,22 @@ def update_receipts_params(params):
                 f'self.small_receipt_threshold = {value}',
                 content
             )
-        elif param == "small_receipt_penalty":
+        elif param == "small_receipt_penalty_factor":
             content = re.sub(
-                r'self\.small_receipt_penalty = [0-9.]+',
-                f'self.small_receipt_penalty = {value}',
+                r'self\.small_receipt_penalty_factor = [0-9.]+',
+                f'self.small_receipt_penalty_factor = {value}',
+                content
+            )
+        elif param == "moderate_spending_threshold":
+            content = re.sub(
+                r'self\.moderate_spending_threshold = [0-9.]+',
+                f'self.moderate_spending_threshold = {value}',
+                content
+            )
+        elif param == "moderate_spending_factor":
+            content = re.sub(
+                r'self\.moderate_spending_factor = [0-9.]+',
+                f'self.moderate_spending_factor = {value}',
                 content
             )
     
@@ -182,18 +194,20 @@ def optimize_parameters():
     # Define parameter ranges to test
     param_ranges = {
         # Spending thresholds
-        'short_trip_threshold': [70, 75, 80, 85],
-        'medium_trip_threshold': [110, 115, 120, 125, 130],
-        'long_trip_threshold': [85, 90, 95, 100],
+        'short_trip_threshold': [90, 100, 110, 120],
+        'medium_trip_threshold': [140, 150, 160, 170],
+        'long_trip_threshold': [110, 120, 130, 140],
         
-        # Penalty factors
-        'short_trip_penalty_factor': [0.4, 0.5, 0.6],
-        'medium_trip_penalty_factor': [0.6, 0.7, 0.75, 0.8],
-        'long_trip_penalty_factor': [0.8, 0.9, 1.0, 1.1],
+        # Penalty factors (lower = more penalty)
+        'short_trip_penalty_factor': [0.40, 0.45, 0.50, 0.55],
+        'medium_trip_penalty_factor': [0.35, 0.40, 0.45],
+        'long_trip_penalty_factor': [0.45, 0.50, 0.55],
         
         # Small receipt parameters
         'small_receipt_threshold': [15, 20, 25],
-        'small_receipt_penalty': [40, 45, 50, 55, 60]
+        'small_receipt_penalty_factor': [0.90, 0.95, 0.97],
+        'moderate_spending_threshold': [40, 50, 60],
+        'moderate_spending_factor': [0.7, 0.8, 0.85]
     }
     
     # First optimize thresholds
@@ -203,9 +217,9 @@ def optimize_parameters():
     
     best_error = baseline_error
     best_params = {
-        'short_trip_threshold': 75.0,
-        'medium_trip_threshold': 120.0,
-        'long_trip_threshold': 90.0
+        'short_trip_threshold': 100.0,
+        'medium_trip_threshold': 150.0,
+        'long_trip_threshold': 120.0
     }
     
     for short_t, medium_t, long_t in product(
@@ -263,19 +277,23 @@ def optimize_parameters():
     
     # Finally optimize small receipt parameters
     print("\n" + "="*50)
-    print("Phase 3: Optimizing small receipt parameters...")
+    print("Phase 3: Optimizing small and moderate receipt parameters...")
     print("="*50)
     
-    for threshold, penalty in product(
+    for small_t, small_p, mod_t, mod_f in product(
         param_ranges['small_receipt_threshold'],
-        param_ranges['small_receipt_penalty']
+        param_ranges['small_receipt_penalty_factor'],
+        param_ranges['moderate_spending_threshold'],
+        param_ranges['moderate_spending_factor']
     ):
         params = {
-            'small_receipt_threshold': threshold,
-            'small_receipt_penalty': penalty
+            'small_receipt_threshold': small_t,
+            'small_receipt_penalty_factor': small_p,
+            'moderate_spending_threshold': mod_t,
+            'moderate_spending_factor': mod_f
         }
         
-        print(f"\nTesting small receipts: threshold=${threshold}/day, penalty=${penalty}")
+        print(f"\nTesting receipts: small<${small_t}/day (factor={small_p}), moderate<${mod_t}/day (factor={mod_f})")
         update_receipts_params(params)
         error = run_evaluation()
         print(f"  Average error: ${error:.2f}")
