@@ -1,4 +1,16 @@
+#!/usr/bin/env python3
 """
+Test different mileage parameters to minimize error
+"""
+
+import os
+import subprocess
+
+def test_mileage_params(threshold, rate1, rate2):
+    """Test specific mileage parameters"""
+    
+    # Update mileage.py with new parameters
+    mileage_content = f'''"""
 Mileage Calculator Module
 
 Handles the tiered mileage rate calculation component of the reimbursement system.
@@ -28,9 +40,9 @@ class MileageCalculator:
 
     def __init__(self):
         # HYPOTHESIS: Tiered rate structure (to be optimized)
-        self.tier_1_threshold = 100.0  # Miles at which rate changes
-        self.tier_1_rate = 0.52  # Rate for first tier ($/mile)
-        self.tier_2_rate = 0.38  # Rate for second tier ($/mile)
+        self.tier_1_threshold = {threshold}  # Miles at which rate changes
+        self.tier_1_rate = {rate1}  # Rate for first tier ($/mile)
+        self.tier_2_rate = {rate2}  # Rate for second tier ($/mile)
 
         # Potential future parameters for AI agents to explore:
         # self.tier_3_threshold = 500.0
@@ -72,11 +84,11 @@ class MileageCalculator:
 
     def get_parameters(self) -> dict:
         """Return current parameters for optimization."""
-        return {
+        return {{
             "tier_1_threshold": self.tier_1_threshold,
             "tier_1_rate": self.tier_1_rate,
             "tier_2_rate": self.tier_2_rate,
-        }
+        }}
 
     def set_parameters(self, params: dict) -> None:
         """Set parameters from optimization process."""
@@ -86,3 +98,41 @@ class MileageCalculator:
             self.tier_1_rate = params["tier_1_rate"]
         if "tier_2_rate" in params:
             self.tier_2_rate = params["tier_2_rate"]
+'''
+    
+    # Write to mileage.py
+    with open('components/mileage/mileage.py', 'w') as f:
+        f.write(mileage_content)
+    
+    print(f"Testing: threshold={threshold}, rate1={rate1}, rate2={rate2}")
+    
+    # Run eval.sh and capture output
+    result = subprocess.run(['./eval.sh'], capture_output=True, text=True)
+    
+    # Extract average error
+    for line in result.stdout.split('\n'):
+        if 'Average error:' in line:
+            error = float(line.split('$')[1].strip())
+            print(f"  Average error: ${error:.2f}")
+            return error
+    
+    print("  Failed to parse error")
+    return 99999
+
+# Test a few parameter combinations
+if __name__ == "__main__":
+    print("Testing mileage parameters...")
+    print("="*60)
+    
+    # Current parameters
+    test_mileage_params(100.0, 0.55, 0.40)
+    
+    # Try different thresholds
+    test_mileage_params(75.0, 0.55, 0.40)
+    test_mileage_params(125.0, 0.55, 0.40)
+    test_mileage_params(150.0, 0.55, 0.40)
+    
+    # Try different rates
+    test_mileage_params(100.0, 0.50, 0.35)
+    test_mileage_params(100.0, 0.60, 0.45)
+    test_mileage_params(100.0, 0.58, 0.42)
