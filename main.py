@@ -7,7 +7,7 @@ from components.bugs.bugs import BugProcessor
 from components.duration.duration import DurationCalculator
 
 
-from claude_solution.reimbursement_calculator_v2 import (
+from claude_solution.reimbursement_calculator_optimized import (
     calculate_reimbursement as claude_calculate_reimbursement,
 )
 
