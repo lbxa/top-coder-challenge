@@ -35,7 +35,7 @@ except ImportError:
 
 from .per_diem.per_diem import PerDiemCalculator
 from .mileage.mileage import MileageCalculator
-from .receipts import ReceiptProcessor
+from .receipts.receipts import ReceiptProcessor
 from .bonuses.bonuses import BonusCalculator
 from .bugs.bugs import BugProcessor
 

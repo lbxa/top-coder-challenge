@@ -1,144 +1,138 @@
 #!/usr/bin/env python3
 """
-ACME Corp Reimbursement Calculator - Final Optimized Version
-Generated after comprehensive analysis and optimization
+ACME Corp Legacy Reimbursement Calculator - Final Version
+Based on comprehensive analysis of all patterns
 """
 
-import random
-
-
-def calculate_reimbursement(trip_duration_days: int, miles_traveled: float, 
-                           total_receipts_amount: float) -> float:
-    """Calculate reimbursement using final optimized model."""
+def calculate_reimbursement(trip_duration_days, miles_traveled, total_receipts_amount):
+    """
+    Calculate reimbursement matching the legacy system behavior.
     
-    # Final optimized parameters
-    BASE_PER_DIEM = 100.00
-    FIVE_DAY_MULT = 1.150
+    Key patterns discovered:
+    1. Receipt amount drives most of the calculation with complex ratios
+    2. Cents bug (.49/.99) applies different penalties based on receipt range
+    3. Per-day rates vary significantly by trip duration
+    4. Mileage has modest impact
+    """
     
-    MILEAGE_TIERS = [100, 300, 600, 1000]
-    MILEAGE_RATES = [0.58, 0.52, 0.47, 0.42, 0.38]
+    # Check for cents bug
+    cents = round((total_receipts_amount * 100) % 100)
+    has_cents_bug = cents in [49, 99]
     
-    EFFICIENCY_RANGE = (180, 220)
-    EFFICIENCY_BONUS = 0.080
-    
-    RECEIPT_TIERS = [50, 200, 600, 1200]
-    RECEIPT_RATES = [0.7, 0.85, 0.92, 0.88, 0.6]
-    
-    CLUSTER_MULTS = {
-        'road_warrior': 1.050,
-        'optimal': 1.150,
-        'extended_low': 0.920,
-        'standard': 1.000,
-        'local': 0.960,
-        'high_spend': 0.850
-    }
-    
-    BIAS_CORRECTIONS = {
-        'duration': {'short': -inf, 'medium': -inf, 'long': -inf},
-        'efficiency': {'low': -inf, 'medium': -inf, 'high': -inf},
-        'spending': {'low': -inf, 'medium': -inf, 'high': -inf}
-    }
-    
-    # Classify trip
-    if trip_duration_days == 0:
-        cluster = 'standard'
-    else:
-        mpd = miles_traveled / trip_duration_days
-        rpd = total_receipts_amount / trip_duration_days
-        
-        if mpd > 350 and trip_duration_days <= 3:
-            cluster = 'road_warrior'
-        elif trip_duration_days == 5 and 150 <= mpd <= 250 and rpd < 120:
-            cluster = 'optimal'
-        elif trip_duration_days >= 7 and mpd < 150:
-            cluster = 'extended_low'
-        elif rpd > 130:
-            cluster = 'high_spend'
-        elif miles_traveled < 80 and trip_duration_days <= 2:
-            cluster = 'local'
-        else:
-            cluster = 'standard'
-    
-    # Calculate components
-    per_diem = BASE_PER_DIEM * trip_duration_days
-    if trip_duration_days == 5:
-        per_diem *= FIVE_DAY_MULT
-    
-    # Mileage
-    mileage = 0.0
-    remaining = miles_traveled
-    prev_tier = 0
-    
-    for i, tier in enumerate(MILEAGE_TIERS):
-        if remaining <= 0:
-            break
-        tier_miles = min(remaining, tier - prev_tier)
-        mileage += tier_miles * MILEAGE_RATES[i]
-        remaining -= tier_miles
-        prev_tier = tier
-    
-    if remaining > 0:
-        mileage += remaining * MILEAGE_RATES[-1]
-    
-    # Efficiency bonus
-    efficiency_bonus = 0.0
-    if trip_duration_days > 0:
-        mpd = miles_traveled / trip_duration_days
-        if EFFICIENCY_RANGE[0] <= mpd <= EFFICIENCY_RANGE[1]:
-            efficiency_bonus = (per_diem + mileage) * EFFICIENCY_BONUS
-    
-    # Receipt reimbursement
-    if total_receipts_amount == 0:
-        receipt_reimb = 0.0
-    else:
-        for i, tier in enumerate(RECEIPT_TIERS):
-            if total_receipts_amount <= tier:
-                receipt_reimb = total_receipts_amount * RECEIPT_RATES[i]
-                break
-        else:
-            base = RECEIPT_TIERS[-1] * RECEIPT_RATES[-2]
-            excess = total_receipts_amount - RECEIPT_TIERS[-1]
-            excess_rate = RECEIPT_RATES[-1] * (1 - excess / 5000)
-            excess_rate = max(0.2, excess_rate)
-            receipt_reimb = base + excess * excess_rate
-    
-    # Total with adjustments
-    total = per_diem + mileage + efficiency_bonus + receipt_reimb
-    total *= CLUSTER_MULTS[cluster]
-    
-    # Apply bias corrections
-    if trip_duration_days <= 2:
-        total *= BIAS_CORRECTIONS['duration']['short']
-    elif trip_duration_days <= 5:
-        total *= BIAS_CORRECTIONS['duration']['medium']
-    else:
-        total *= BIAS_CORRECTIONS['duration']['long']
-    
-    if trip_duration_days > 0:
-        mpd = miles_traveled / trip_duration_days
-        if mpd < 100:
-            total *= BIAS_CORRECTIONS['efficiency']['low']
-        elif mpd < 200:
-            total *= BIAS_CORRECTIONS['efficiency']['medium']
-        else:
-            total *= BIAS_CORRECTIONS['efficiency']['high']
-    
-    if total_receipts_amount < 100:
-        total *= BIAS_CORRECTIONS['spending']['low']
+    # Start with receipt-based calculation
+    # Using piecewise function based on ratio analysis
+    if total_receipts_amount < 5:
+        base = 200 + total_receipts_amount * 30
+    elif total_receipts_amount < 10:
+        base = 150 + total_receipts_amount * 25
+    elif total_receipts_amount < 20:
+        base = 100 + total_receipts_amount * 20
+    elif total_receipts_amount < 50:
+        base = 300 + total_receipts_amount * 10
+    elif total_receipts_amount < 100:
+        base = 500 + total_receipts_amount * 3
+    elif total_receipts_amount < 200:
+        base = 650 + total_receipts_amount * 1.8
     elif total_receipts_amount < 500:
-        total *= BIAS_CORRECTIONS['spending']['medium']
+        base = 800 + total_receipts_amount * 1.1
+    elif total_receipts_amount < 1000:
+        base = 500 + total_receipts_amount * 1.0
+    elif total_receipts_amount < 1500:
+        base = 300 + total_receipts_amount * 0.95
+    elif total_receipts_amount < 2000:
+        base = 200 + total_receipts_amount * 0.85
     else:
-        total *= BIAS_CORRECTIONS['spending']['high']
+        base = 100 + total_receipts_amount * 0.72
     
-    # Add noise
-    noise_seed = int((trip_duration_days * 1000 + miles_traveled * 10 + total_receipts_amount * 100) % 1000)
-    random.seed(noise_seed)
-    noise = random.uniform(-0.01, 0.01)
-    total *= (1 + noise)
+    # Add per diem component based on trip duration
+    if trip_duration_days == 1:
+        # 1-day trips average $873
+        per_diem = 200
+    elif trip_duration_days == 2:
+        # 2-day trips average $1046 total
+        per_diem = trip_duration_days * 150
+    elif trip_duration_days == 3:
+        # 3-day trips average $1010 total
+        per_diem = trip_duration_days * 110
+    elif trip_duration_days == 4:
+        per_diem = trip_duration_days * 105
+    elif trip_duration_days == 5:
+        # 5-day bonus
+        per_diem = trip_duration_days * 100
+    elif trip_duration_days <= 7:
+        per_diem = trip_duration_days * 95
+    elif trip_duration_days <= 10:
+        per_diem = trip_duration_days * 85
+    elif trip_duration_days <= 12:
+        per_diem = trip_duration_days * 80
+    else:
+        per_diem = trip_duration_days * 75
     
-    # Magic cents
-    cents = int(round(total_receipts_amount * 100)) % 100
-    if cents in [49, 99]:
-        total += random.uniform(2, 5)
+    # Mileage component (relatively small impact)
+    if miles_traveled < 100:
+        mileage = miles_traveled * 0.20
+    elif miles_traveled < 300:
+        mileage = 20 + (miles_traveled - 100) * 0.15
+    elif miles_traveled < 600:
+        mileage = 50 + (miles_traveled - 300) * 0.12
+    elif miles_traveled < 1000:
+        mileage = 86 + (miles_traveled - 600) * 0.10
+    else:
+        mileage = 126 + (miles_traveled - 1000) * 0.08
     
-    return round(total, 2)
+    # Combine components
+    reimbursement = base + per_diem + mileage
+    
+    # Apply cents bug penalty - varies by receipt amount!
+    if has_cents_bug:
+        if total_receipts_amount < 100:
+            # Low receipts: moderate penalty
+            reimbursement *= 0.75
+        elif total_receipts_amount < 500:
+            # Medium receipts: stronger penalty
+            reimbursement *= 0.55
+        elif total_receipts_amount < 1000:
+            # High receipts: severe penalty
+            reimbursement *= 0.40
+        else:
+            # Very high receipts: extreme penalty
+            reimbursement *= 0.30
+    
+    # Special adjustments for edge cases
+    # Very low receipts with short trips
+    if total_receipts_amount < 10 and trip_duration_days <= 2:
+        reimbursement = max(reimbursement, 120)
+    
+    # 1-day trips have high variance - adjust based on other factors
+    if trip_duration_days == 1:
+        if total_receipts_amount > 1000:
+            reimbursement *= 0.85
+        elif total_receipts_amount < 100:
+            reimbursement *= 1.2
+    
+    # Long trips with very high receipts are capped
+    if trip_duration_days >= 12 and total_receipts_amount > 2000:
+        max_allowed = total_receipts_amount * 0.78 + 200
+        reimbursement = min(reimbursement, max_allowed)
+    
+    return round(reimbursement, 2)
+
+
+if __name__ == "__main__":
+    import sys
+    
+    if len(sys.argv) != 4:
+        print("Usage: ./reimbursement_calculator_final.py <trip_duration_days> <miles_traveled> <total_receipts_amount>")
+        sys.exit(1)
+    
+    try:
+        trip_duration = int(sys.argv[1])
+        miles = float(sys.argv[2])
+        receipts = float(sys.argv[3])
+        
+        result = calculate_reimbursement(trip_duration, miles, receipts)
+        print(f"{result:.2f}")
+        
+    except (ValueError, TypeError) as e:
+        print(f"Error: Invalid input - {e}")
+        sys.exit(1)

@@ -1,7 +1,7 @@
 import sys
 from components.per_diem.per_diem import PerDiemCalculator
 from components.mileage.mileage import MileageCalculator
-from components.receipts import ReceiptProcessor
+from components.receipts.receipts import ReceiptProcessor
 from components.bonuses.bonuses import BonusCalculator
 from components.bugs.bugs import BugProcessor
 
