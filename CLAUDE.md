@@ -41,6 +41,145 @@
 - Use `python3` or `uv run python` for execution
 - Check `pyproject.toml` for project dependencies and configuration
 
+### Package Management with uv
+
+#### Installing Packages
+```bash
+# Install a package and add to dependencies
+uv add pandas
+
+# Install a specific version
+uv add pandas==2.1.0
+
+# Install development dependencies
+uv add --dev pytest black mypy
+
+# Install optional dependencies
+uv add --optional visualization matplotlib seaborn
+
+# Install from requirements.txt
+uv pip install -r requirements.txt
+```
+
+#### Managing Dependencies
+```bash
+# Sync dependencies (install all from pyproject.toml)
+uv sync
+
+# Update all dependencies
+uv lock --upgrade
+
+# Update specific package
+uv add pandas --upgrade
+
+# Remove a package
+uv remove pandas
+
+# Show installed packages
+uv pip list
+
+# Show dependency tree
+uv tree
+```
+
+#### Running Python with uv
+```bash
+# Run Python script with uv environment
+uv run python script.py
+
+# Run Python with specific arguments
+uv run python -m pytest tests/
+
+# Run interactive Python shell
+uv run python
+
+# Execute module directly
+uv run -m jupyter notebook
+```
+
+#### Project Initialization
+```bash
+# Initialize new project with pyproject.toml
+uv init
+
+# Add Python version requirement
+uv python pin 3.11
+
+# Create virtual environment
+uv venv
+
+# Activate environment (if needed for other tools)
+source .venv/bin/activate  # On Unix/macOS
+# or
+.venv\Scripts\activate     # On Windows
+```
+
+#### Troubleshooting Common Issues
+
+**Package Not Found:**
+```bash
+# Update package index
+uv pip install --upgrade pip
+
+# Try installing with pip fallback
+uv pip install pandas
+
+# Check if package exists
+uv search pandas
+```
+
+**Dependency Conflicts:**
+```bash
+# Show conflict details
+uv lock --verbose
+
+# Force resolution (use carefully)
+uv add pandas --force
+
+# Check what would be installed
+uv add pandas --dry-run
+```
+
+**Environment Issues:**
+```bash
+# Recreate environment
+rm -rf .venv
+uv venv
+uv sync
+
+# Check Python version
+uv run python --version
+
+# Verify uv installation
+uv --version
+```
+
+#### Best Practices
+- **Always use `uv add`** instead of `pip install` to ensure dependencies are tracked
+- **Commit `uv.lock`** to version control for reproducible builds
+- **Use `uv sync`** when setting up project on new machine
+- **Pin Python version** in pyproject.toml for consistency
+- **Separate dev dependencies** using `--dev` flag
+- **Use virtual environments** to isolate project dependencies
+
+#### Example Workflow
+```bash
+# Setting up a new data analysis project
+uv init data-analysis
+cd data-analysis
+uv python pin 3.11
+uv add pandas numpy matplotlib jupyter
+uv add --dev pytest black mypy
+uv sync
+
+# Running the project
+uv run python analysis.py
+uv run jupyter notebook
+
+# Adding new dependencies as needed
+uv add scikit-learn seaborn
+```
+
 ### Code Quality Standards
 ```python
 # Good: Clear, testable function with proper error handling
