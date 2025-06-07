@@ -4,13 +4,14 @@ This directory contains the modular implementation of the ACME Corp reimbursemen
 
 ## Architecture Overview
 
-The system is decomposed into 5 independent components plus a coordination layer:
+The system is decomposed into 6 independent components plus a coordination layer:
 
 ```
 main.py (orchestrator)
 ├── components/per_diem.py      - Base daily rate calculation
 ├── components/mileage.py       - Tiered mileage rate system  
 ├── components/receipts.py      - Complex receipt processing with penalties
+├── components/duration.py      - Duration-specific adjustments and bonuses
 ├── components/bonuses.py       - All bonus calculations
 ├── components/bugs.py          - System quirks and bugs
 └── components/optimizer.py     - Parameter optimization coordination
@@ -45,16 +46,26 @@ main.py (orchestrator)
   - Fine-tune penalty factors
   - Investigate edge cases
 
-### 4. Bonus Calculator (`bonuses.py`)
+### 4. Duration Calculator (`duration.py`)
+**Complexity: LOW-MEDIUM**
+- **Purpose**: Calculate duration-specific adjustments and bonuses
+- **Key Parameters**: Duration thresholds, bonus amounts, multipliers
+- **Focus Areas**:
+  - Optimize 5-day trip bonus amount
+  - Investigate short/long trip adjustments
+  - Analyze weekend/weekday effects
+  - Discover duration-specific patterns
+
+### 5. Bonus Calculator (`bonuses.py`)
 **Complexity: MEDIUM**
 - **Purpose**: Calculate all positive adjustments
 - **Key Parameters**: Bonus amounts and trigger conditions
 - **Focus Areas**:
-  - Optimize 5-day bonus amount
-  - Fine-tune efficiency bonus range
+  - Optimize efficiency bonus range
   - Discover additional bonuses
+  - Fine-tune bonus conditions
 
-### 5. Bug Processor (`bugs.py`)
+### 6. Bug Processor (`bugs.py`)
 **Complexity: LOW-MEDIUM**
 - **Purpose**: Replicate system bugs and quirks
 - **Key Parameters**: Bug trigger conditions and amounts
@@ -63,7 +74,7 @@ main.py (orchestrator)
   - Discover additional bugs
   - Handle edge cases
 
-### 6. System Optimizer (`optimizer.py`)
+### 7. System Optimizer (`optimizer.py`)
 **Complexity: HIGH** - Coordination layer
 - **Purpose**: Coordinate optimization across all components
 - **Features**: Parameter extraction, performance evaluation, optimization algorithms
@@ -150,9 +161,10 @@ Multiple AI agents can work simultaneously on:
 1. **Agent 1**: Per diem component optimization
 2. **Agent 2**: Mileage tier structure analysis  
 3. **Agent 3**: Receipt penalty system (most complex)
-4. **Agent 4**: Bonus discovery and optimization
-5. **Agent 5**: Bug replication and edge cases
-6. **Agent 6**: System-wide parameter coordination
+4. **Agent 4**: Duration-specific patterns and bonuses
+5. **Agent 5**: Bonus discovery and optimization
+6. **Agent 6**: Bug replication and edge cases
+7. **Agent 7**: System-wide parameter coordination
 
 Each agent can:
 - Focus on their component in isolation
@@ -166,9 +178,10 @@ Components interact through the main calculation flow:
 
 1. Calculate base components (per diem + mileage)
 2. Process receipts (with penalties)
-3. Add bonuses
-4. Apply bugs/quirks
-5. Return final amount
+3. Apply duration-specific adjustments
+4. Add bonuses
+5. Apply bugs/quirks
+6. Return final amount
 
 The modular design ensures changes to one component don't break others, enabling safe parallel development.
 

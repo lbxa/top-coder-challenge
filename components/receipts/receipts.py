@@ -4,12 +4,13 @@ Receipt Processor Module
 Handles the most complex component of the reimbursement system - receipt processing.
 Based on intelligence from Kevin (Procurement), Dave (Marketing), and system observations.
 
-Key Hypotheses:
+Key Hypotheses (REFINED based on analysis):
 - Penalties for very high spending per day (trip-length dependent thresholds)
-- Penalties for very low spending per day
-- Complex tier system: 1-3 days (>$75/day), 4-7 days (>$120/day), 8+ days (>$90/day)
-- Small receipt penalty (~$50) for receipts < $20/day
+- Penalties for very low spending per day  
+- Complex tier system: 1-3 days (>$100/day), 4-7 days (>$150/day), 8+ days (>$120/day)
+- Small receipt penalty for receipts < $20/day (results in near-zero reimbursement)
 - Receipt amount cannot reduce base pay below zero
+- Processing ratios vary by trip length and spending amount
 
 AI Agent Focus Areas:
 1. Optimize penalty thresholds and factors for each trip length category
@@ -35,23 +36,28 @@ class ReceiptProcessor:
         self.long_trip_days = 8  # 8+ days
 
         # HYPOTHESIS: Spending thresholds per day for each trip length
-        self.short_trip_threshold = 75.0  # $/day threshold for 1-3 day trips
-        self.medium_trip_threshold = 120.0  # $/day threshold for 4-7 day trips
-        self.long_trip_threshold = 90.0  # $/day threshold for 8+ day trips
+        self.short_trip_threshold = 100.0  # $/day threshold for 1-3 day trips
+        self.medium_trip_threshold = 150.0  # $/day threshold for 4-7 day trips
+        self.long_trip_threshold = 120.0  # $/day threshold for 8+ day trips
 
         # HYPOTHESIS: Penalty factors for overspending
-        self.short_trip_penalty_factor = 0.5  # Penalty multiplier for 1-3 days
-        self.medium_trip_penalty_factor = 0.75  # Penalty multiplier for 4-7 days
-        self.long_trip_penalty_factor = 1.0  # Penalty multiplier for 8+ days
+        self.short_trip_penalty_factor = 0.45  # Penalty multiplier for 1-3 days (~57% retention)
+        self.medium_trip_penalty_factor = 0.40  # Penalty multiplier for 4-7 days (~60% retention)
+        self.long_trip_penalty_factor = 0.50  # Penalty multiplier for 8+ days (~50% retention)
 
-        # HYPOTHESIS: Small receipt penalty
+        # HYPOTHESIS: Small receipt penalty (severe for very low spending)
         self.small_receipt_threshold = 20.0  # $/day threshold for small receipts
-        self.small_receipt_penalty = 50.0  # Flat penalty amount
+        self.small_receipt_penalty_factor = 0.95  # Penalty factor (5% reimbursement)
+        
+        # Additional parameters for refined model
+        self.moderate_spending_threshold = 50.0  # $/day for moderate spending
+        self.moderate_spending_factor = 0.8  # 80% reimbursement for moderate spending
 
         # Potential future parameters for AI agents to explore:
-        # self.zero_receipt_penalty = 25.0
-        # self.maximum_daily_reimbursement = 200.0
-        # self.receipt_rounding_threshold = 0.50
+        # self.zero_receipt_penalty = 0.0  # No penalty for zero receipts
+        # self.maximum_daily_reimbursement = 150.0  # Cap on daily reimbursement
+        # self.very_high_spending_threshold = 200.0  # Threshold for extreme spending
+        # self.weekend_receipt_bonus = 1.1  # Weekend receipt multiplier
 
     def process(self, days: float, receipts: float) -> float:
         """
@@ -125,7 +131,11 @@ class ReceiptProcessor:
         """Apply penalty for very small receipt amounts."""
 
         if 0 < receipts and receipts_per_day < self.small_receipt_threshold:
-            receipt_pay -= self.small_receipt_penalty
+            # Apply severe penalty for very low spending (results in ~5% reimbursement)
+            receipt_pay = receipts * (1 - self.small_receipt_penalty_factor)
+        elif receipts_per_day < self.moderate_spending_threshold:
+            # Apply moderate penalty for low-moderate spending
+            receipt_pay = receipts * self.moderate_spending_factor
 
         return receipt_pay
 
@@ -139,7 +149,9 @@ class ReceiptProcessor:
             "medium_trip_penalty_factor": self.medium_trip_penalty_factor,
             "long_trip_penalty_factor": self.long_trip_penalty_factor,
             "small_receipt_threshold": self.small_receipt_threshold,
-            "small_receipt_penalty": self.small_receipt_penalty,
+            "small_receipt_penalty_factor": self.small_receipt_penalty_factor,
+            "moderate_spending_threshold": self.moderate_spending_threshold,
+            "moderate_spending_factor": self.moderate_spending_factor,
         }
 
     def set_parameters(self, params: dict) -> None:
