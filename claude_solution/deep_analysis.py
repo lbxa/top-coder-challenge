@@ -185,7 +185,7 @@ ax6.legend(bbox_to_anchor=(1.05, 1), loc='upper left')
 
 plt.tight_layout()
 plt.savefig('cluster_analysis.png', dpi=150, bbox_inches='tight')
-plt.show()
+plt.close()  # Close instead of show to avoid GUI
 
 # Print cluster characteristics
 print("=== CLUSTER CHARACTERISTICS ===")
