@@ -60,3 +60,27 @@ Reverse-engineer ACME Corp's legacy reimbursement system with 100% accuracy on 1
 2. Analyze interaction effects more deeply
 3. Fine-tune parameters based on visual insights
 4. Test edge cases systematically
+
+## Pattern Analysis Results
+
+### Receipt Range Behaviors
+- **$0-20**: Ratio 45.7x (!), highly variable
+- **$20-50**: Ratio 26.5x, still very high
+- **$50-100**: Ratio 9.7x
+- **$100-200**: Ratio 5.8x
+- **$200-500**: Ratio 2.4x
+- **$500-1000**: Ratio 1.6x
+- **$1000-1500**: Ratio 1.32x
+- **$1500-2000**: Ratio 0.96x
+- **$2000-3000**: Ratio 0.73x
+
+### Cents Bug Penalties (not bonuses!)
+- **$0-100**: 0.44-0.95x of normal
+- **$200-500**: 0.58x of normal
+- **$500-1000**: 0.58x of normal
+- **$1000-1500**: 0.38x of normal
+- **$1500-2000**: 0.35x of normal
+- **$2000+**: 0.20x of normal
+
+### Key Finding
+Efficiency bonus (180-220 mpd) is actually NEGATIVE! 0.903x of comparison group.
